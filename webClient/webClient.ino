@@ -19,6 +19,7 @@ char smsContent[160];
 char soupResult[160];
 char lastProcBuffer[20];
 char pos;
+int checkToSMS = 0;
 byte posOfReadSMS, i;     
 String soupTmp;
 static byte mymac[] = { 0x74,0x69,0x69,0x2D,0x30,0x31 };
@@ -42,6 +43,7 @@ static void my_callback (byte status, word off, word len) {
   soupTmp = (const char*) Ethernet::buffer + off;
   Serial.println("...");
   smsSnd();
+  smsPcs();
 }
 
 
@@ -54,10 +56,78 @@ void setup () {
 
 void loop () {
   ethGet();
+}
+
+void ethGet(){
+  ether.packetLoop(ether.packetReceive());
+  if (millis() > timer) {
+    timer = millis() + 2711;
+    Serial.println();
+    ether.browseUrl(PSTR("/listofnumber.php?mssv="), lastProc, website, my_callback);
+  }
+}
+
+
+void smsPcs(){
+  pos = sms.IsSMSPresent(SMS_UNREAD);
+  if ((int)pos) {
+    if (sms.GetSMS(pos, number, smstext, 160)) {
+      char smsContent[160];
+      if (strcmp(smstext, "kttk") == 0) {
+        gsm.SimpleWriteln(F("AT+CUSD=1,\"*101#\""));
+        delay(15000);
+        char resp[160];
+        gsm.read(resp, 160); 
+        Serial.println(resp);
+        delay(2711);
+        sms.SendSMS(mrLong, resp);
+        delay(2711);
+      } else if (strcmp(smstext, "kttn") == 0) {
+        sms.SendSMS("109", "kt100");
+        delay(2711);
+      } else {
+        strcpy(smsContent, "");
+        strcat(smsContent, "rvcd 1 sms from :: ");
+        strcat(smsContent, number);
+        strcat(smsContent, "\n");
+        strcat(smsContent, smstext);
+        sms.SendSMS(mrLong, smsContent);
+        strcpy(smsContent, "");
+        delay(2711);
+      }
+    }
+      sms.DeleteSMS(byte(pos));
+  }
   delay(2711);
-  ethGet();
-  delay(2711);
-  smsPcs();
+  pos = sms.IsSMSPresent(SMS_READ);
+  if ((int)pos) {
+    if (sms.GetSMS(pos, number, smstext, 160)) {
+      char smsContent[160];
+      if (strcmp(smstext, "kttk") == 0) {
+        gsm.SimpleWriteln(F("AT+CUSD=1,\"*101#\""));
+        delay(15000);
+        char resp[160];
+        gsm.read(resp, 160); 
+        Serial.println(resp);
+        delay(2711);
+        sms.SendSMS(mrLong, resp);
+        delay(2711);
+      } else if (strcmp(smstext, "kttn") == 0) {
+        sms.SendSMS("109", "kt100");
+        delay(2711);
+      } else {
+        strcpy(smsContent, "");
+        strcat(smsContent, "rvcd 1 sms from :: ");
+        strcat(smsContent, number);
+        strcat(smsContent, "\n");
+        strcat(smsContent, smstext);
+        sms.SendSMS(mrLong, smsContent);
+        strcpy(smsContent, "");
+        delay(2711);
+      }
+    }
+      sms.DeleteSMS(byte(pos));
+  }
   delay(2711);
 }
 
@@ -92,17 +162,6 @@ void ethInit(){
 }
 
 
-void ethGet(){
-  Serial.println("eth getting data...");
-  ether.packetLoop(ether.packetReceive());
-  if (millis() > timer) {
-    timer = millis() + 2711;
-    Serial.println();
-    Serial.println("requesting... ");
-    ether.browseUrl(PSTR("/listofnumber.php?mssv="), lastProc, website, my_callback);
-    Serial.println("requested!!!");
-  }
-}
 
 void formatNumber(char input[]){
   String ftmp = input;
@@ -163,36 +222,4 @@ void smsSnd(){
   }
 }
 
-void smsPcs(){
-  pos = sms.IsSMSPresent(SMS_UNREAD);
-  if ((int)pos) {
-    if (sms.GetSMS(pos, number, smstext, 160)) {
-      char smsContent[160];
-      if (strcmp(smstext, "kttk") == 0) {
-        gsm.SimpleWriteln(F("AT+CUSD=1,\"*101#\""));
-        delay(15000);
-        char resp[160];
-        gsm.read(resp, 160); 
-        Serial.println(resp);
-        delay(2711);
-        sms.SendSMS(mrLong, resp);
-        delay(2711);
-      } else if (strcmp(smstext, "kttn") == 0) {
-        sms.SendSMS("109", "kt100");
-        delay(2711);
-      } else {
-        strcpy(smsContent, "");
-        strcat(smsContent, "rvcd 1 sms from :: ");
-        strcat(smsContent, number);
-        strcat(smsContent, "\n");
-        strcat(smsContent, smstext);
-        sms.SendSMS(mrLong, smsContent);
-        strcpy(smsContent, "");
-        delay(2711);
-      }
-    }
-      sms.DeleteSMS(byte(pos));
-  }
-  delay(2711);
-}
 
