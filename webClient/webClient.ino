@@ -150,7 +150,7 @@ void smsSnd(){
         }
         
       } else {
-        sms.SendSMS(mrLong, "n0thingElse :boss:");
+        //sms.SendSMS(mrLong, "n0thingElse :boss:");
         delay(2711);
         strcpy(lastProc, "a");
       }
